@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Pro - Classic Captcha</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+
+    <style>
+        :root { --win: #27ae60; --lose: #e74c3c; --primary: #2980b9; --dark: #121212; --accent: #f1c40f; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--dark); color: white; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .card { background: #1e1e1e; padding: 20px; border-radius: 15px; width: 450px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); text-align: center; position: relative; min-height: 750px; }
+        
+        input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; box-sizing: border-box; outline: none; font-size: 14px; }
+        input { background: #333; color: white; border: 1px solid #444; }
+        button { background: var(--win); color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:disabled { background: #444; cursor: not-allowed; opacity: 0.6; }
+        
+        #main-menu, #game-screen, #register-screen { display: none; }
+        .section-box { background: #262626; padding: 12px; border-radius: 10px; text-align: left; margin-bottom: 10px; border: 1px solid #333; }
+        
+        /* CLASSIC CHECKBOX CAPTCHA STYLE */
+        .captcha-wrapper {
+            background: #f9f9f9; border: 1px solid #d3d3d3; border-radius: 3px;
+            display: flex; align-items: center; padding: 10px; margin: 15px 0;
+            width: 100%; box-sizing: border-box; color: #555; height: 74px;
+        }
+        .captcha-checkbox { width: 28px !important; height: 28px !important; margin: 0 12px 0 0 !important; cursor: pointer; }
+        .captcha-label { font-size: 14px; font-family: Roboto, Arial, sans-serif; flex-grow: 1; text-align: left; }
+        .captcha-logo { display: flex; flex-direction: column; align-items: center; opacity: 0.8; }
+        .captcha-logo img { width: 30px; }
+        .captcha-logo span { font-size: 8px; color: #9b9b9b; }
+
+        .list-scroll { max-height: 120px; overflow-y: auto; background: #000; border-radius: 8px; min-height: 50px; border: 1px solid #333; margin-top: 5px; }
+        .item { padding: 8px; background: #222; margin: 5px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+        .streak-badge { background: linear-gradient(45deg, #f39c12, #e67e22); padding: 2px 6px; border-radius: 4px; color: white; font-weight: bold; font-size: 10px; }
+        .inbox-item { border-left: 3px solid var(--primary); margin-bottom: 5px; padding: 5px; font-size: 11px; background: #2a2a2a; border-radius: 4px; }
+        
+        #universal-popup { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #2c3e50; border: 2px solid var(--accent); padding: 20px; border-radius: 12px; z-index: 999; width: 320px; box-shadow: 0 0 30px rgba(0,0,0,0.9); }
+        #result-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); border-radius: 15px; z-index: 100; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div id="universal-popup">
+            <h4 id="pop-title" style="margin:0 0 10px 0; color:var(--accent);">⚠️ SECURITY</h4>
+            <p id="pop-msg" style="font-size: 13px; margin-bottom: 15px;"></p>
+            <div style="display: flex; gap: 10px;">
+                <button id="pop-yes" style="background: var(--win);">IZINKAN</button>
+                <button id="pop-no" style="background: var(--lose);">TOLAK</button>
+            </div>
+        </div>
+
+        <div id="login-screen">
+            <h2 style="color: var(--win);">♟️ LOGIN</h2>
+            <input type="text" id="login-user" placeholder="Username">
+            <input type="password" id="login-pass" placeholder="Password">
+            
+            <div class="captcha-wrapper">
+                <input type="checkbox" class="captcha-checkbox" id="login-bot-check">
+                <div class="captcha-label">I'm not a robot</div>
+                <div class="captcha-logo">
+                    <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="reCAPTCHA">
+                    <span>reCAPTCHA</span>
+                </div>
+            </div>
+            
+            <button id="btn-login" onclick="handleLogin()" disabled>LOGIN</button>
+            <span onclick="toggleAuth('reg')" style="cursor:pointer; font-size:12px; text-decoration:underline; color:var(--primary);">Daftar Akun Baru</span>
+        </div>
+
+        <div id="register-screen">
+            <h2 style="color: var(--primary);">📝 DAFTAR</h2>
+            <input type="text" id="reg-user" placeholder="Username">
+            <input type="password" id="reg-pass" placeholder="Password">
+            
+            <div class="captcha-wrapper">
+                <input type="checkbox" class="captcha-checkbox" id="reg-bot-check">
+                <div class="captcha-label">I'm not a robot</div>
+                <div class="captcha-logo">
+                    <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="reCAPTCHA">
+                    <span>reCAPTCHA</span>
+                </div>
+            </div>
+
+            <button id="btn-reg" onclick="handleRegister()" style="background: var(--primary);" disabled>CREATE & LOGIN</button>
+            <span onclick="toggleAuth('login')" style="cursor:pointer; font-size:12px; text-decoration:underline; color:var(--primary);">Kembali ke Login</span>
+        </div>
+
+        <div id="main-menu">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div>
+                    <span id="display-my-name" style="color: var(--win); font-weight: bold;"></span>
+                    <span id="my-streak" class="streak-badge">🔥 0</span>
+                </div>
+                <span id="net-id" style="color: #666; font-size: 10px; cursor: pointer;" onclick="copyId()">ID: ...</span>
+            </div>
+            <div class="section-box">
+                <label style="font-size: 10px; color: var(--primary); font-weight: bold;">📥 KOTAK MASUK</label>
+                <div id="inboxList" class="list-scroll" style="max-height: 80px;"></div>
+            </div>
+            <div class="section-box">
+                <label style="font-size: 10px; color: #aaa;">DAFTAR TEMAN</label>
+                <div id="friendsList" class="list-scroll"></div>
+            </div>
+            <div class="section-box">
+                <label style="font-size: 10px; color: #aaa;">LOBBY PUBLIK</label>
+                <div id="activeLobbies" class="list-scroll"></div>
+            </div>
+            <button onclick="logout()" style="background: transparent; border: 1px solid #444; color: #666; font-size: 10px; margin-top: 10px;">LOGOUT</button>
+        </div>
+
+        <div id="game-screen">
+            <div id="role-tag" style="background:var(--accent); color:black; font-weight:bold; padding:5px; margin-bottom:5px; border-radius:4px; font-size:12px;"></div>
+            <div id="board"></div>
+            <button onclick="resignGame()" style="background: var(--lose);">MENYERAH</button>
+        </div>
+
+        <div id="result-overlay">
+            <h2 id="result-text"></h2>
+            <p id="result-detail" style="color: #aaa; margin-bottom: 20px; font-size: 14px;"></p>
+            <div id="streak-gain" style="color: var(--accent); font-weight: bold; margin-bottom: 10px;"></div>
+            <button onclick="backToMenu()" style="width: 150px;">KEMBALI</button>
+        </div>
+    </div>
+
+    <script>
+        var board = null, game = new Chess(), peer = new Peer(), conn = null, myRole = '', myPeerId = '';
+        var myName = "", oppName = "";
+        var accounts = JSON.parse(localStorage.getItem('chess_v11_acc') || '{}');
+
+        // --- CAPTCHA CHECKBOX LOGIC ---
+        $('.captcha-checkbox').on('change', function() {
+            let isChecked = $(this).is(':checked');
+            $('#btn-login, #btn-reg').prop('disabled', !isChecked);
+        });
+
+        // --- AUTH LOGIC ---
+        function toggleAuth(type) {
+            $('.captcha-checkbox').prop('checked', false);
+            $('#btn-login, #btn-reg').prop('disabled', true);
+            if (type === 'reg') { $('#login-screen').hide(); $('#register-screen').fadeIn(); }
+            else { $('#register-screen').hide(); $('#login-screen').fadeIn(); }
+        }
+
+        function handleRegister() {
+            let u = $('#reg-user').val().trim(), p = $('#reg-pass').val().trim();
+            if (u.length < 3) return alert("Username minimal 3 karakter");
+            if (accounts[u]) return alert("Username sudah terdaftar");
+
+            accounts[u] = { password: p, streak: 0, friends: [], inbox: [] };
+            save();
+            completeLogin(u);
+        }
+
+        function handleLogin() {
+            let u = $('#login-user').val().trim(), p = $('#login-pass').val().trim();
+            if (accounts[u] && accounts[u].password === p) {
+                let activeId = localStorage.getItem('active_id_' + u);
+                if (activeId && activeId !== myPeerId) {
+                    myName = u; setupSecurityListener();
+                    localStorage.setItem('auth_req_' + u, myPeerId);
+                    alert("Akun sedang online. Meminta izin pemilik...");
+                } else { completeLogin(u); }
+            } else { alert("User/Pass salah!"); }
+        }
+
+        function completeLogin(u) {
+            myName = u;
+            accounts[u].streak = accounts[u].streak || 0;
+            accounts[u].inbox = accounts[u].inbox || [];
+            accounts[u].friends = accounts[u].friends || [];
+            localStorage.setItem('active_id_' + myName, myPeerId);
+            sessionStorage.setItem('chess_v11_session', u);
+            $('#login-screen, #register-screen').hide();
+            $('#main-menu').fadeIn();
+            $('#display-my-name').text("👤 " + myName);
+            $('#my-streak').text("🔥 " + accounts[u].streak);
+            updateFriendsUI(); updateInboxUI(); setupSecurityListener();
+            addInbox("Berhasil login ke akun.");
+        }
+
+        // --- SECURITY & INBOX ---
+        function setupSecurityListener() {
+            window.addEventListener('storage', (e) => {
+                if (!myName) return;
+                if (e.key === 'auth_req_' + myName && e.newValue) {
+                    let reqId = e.newValue;
+                    addInbox("Percobaan login terdeteksi.");
+                    showSecurityPopup("🔒 KEAMANAN", "Izinkan perangkat lain masuk?", 
+                    () => {
+                        localStorage.setItem('auth_res_' + myName, 'OK_' + reqId);
+                        localStorage.removeItem('auth_req_' + myName);
+                        logout();
+                    }, 
+                    () => {
+                        localStorage.setItem('auth_res_' + myName, 'NO_' + reqId);
+                        localStorage.removeItem('auth_req_' + myName);
+                        $('#universal-popup').hide();
+                    });
+                }
+                if (e.key === 'auth_res_' + myName && e.newValue) {
+                    if (e.newValue === 'OK_' + myPeerId) {
+                        localStorage.removeItem('auth_res_' + myName);
+                        completeLogin(myName);
+                    } else if (e.newValue === 'NO_' + myPeerId) {
+                        localStorage.removeItem('auth_res_' + myName);
+                        alert("Akses ditolak!");
+                        $('.captcha-checkbox').prop('checked', false);
+                        $('#btn-login').prop('disabled', true);
+                    }
+                }
+            });
+        }
+
+        window.addEventListener('beforeunload', () => { if(myName) localStorage.removeItem('active_id_' + myName); });
+
+        function addInbox(msg) {
+            if(!myName) return;
+            let time = new Date().toLocaleTimeString();
+            accounts[myName].inbox.unshift(`[${time}] ${msg}`);
+            if(accounts[myName].inbox.length > 5) accounts[myName].inbox.pop();
+            save(); updateInboxUI();
+        }
+
+        function updateInboxUI() {
+            $('#inboxList').empty();
+            let box = accounts[myName].inbox || [];
+            if(box.length === 0) $('#inboxList').append('<div style="padding:10px; font-size:10px; color:#555;">Belum ada pesan.</div>');
+            box.forEach(m => $('#inboxList').append(`<div class="inbox-item">${m}</div>`));
+        }
+
+        // --- GAME ---
+        function finishGame(title, detail, isWin) {
+            if(isWin) {
+                accounts[myName].streak++; save();
+                $('#streak-gain').text("STREAK BERTAMBAH! 🔥 " + accounts[myName].streak);
+                addInbox(`Menang vs ${oppName}. Streak naik!`);
+            } else { $('#streak-gain').text(""); }
+            $('#result-text').text(title); $('#result-detail').text(detail);
+            $('#result-overlay').css("display", "flex"); $('#my-streak').text("🔥 " + accounts[myName].streak);
+        }
+
+        function checkGameOver() {
+            if (game.in_checkmate()) {
+                if (game.turn() === myRole[0]) finishGame(`${oppName} MENANG`, "KAMU KALAH", false);
+                else finishGame("KAMU MENANG", `${oppName} KALAH`, true);
+            } else if (game.in_draw()) finishGame("SERI", "Draw!", false);
+        }
+
+        // --- NETWORK ---
+        peer.on('open', (id) => { myPeerId = id; $('#net-id').text("ID: " + id.substring(0,8)); startLobbySync(); });
+        peer.on('connection', (i) => {
+            i.on('data', (d) => {
+                if(d.type === 'FRIEND_REQ') {
+                    showSecurityPopup("➕ TEMAN", `${d.name} ingin berteman.`, () => {
+                        addFriendData(i.peer, d.name);
+                        let b = peer.connect(i.peer); b.on('open', () => { b.send({type: 'FRIEND_ACC', name: myName}); $('#universal-popup').hide(); });
+                    }, () => $('#universal-popup').hide());
+                } else if(d.type === 'FRIEND_ACC') { addFriendData(i.peer, d.name); alert("Teman diterima!"); }
+                else if(d.type === 'CHALLENGE_REQ') {
+                    oppName = d.name;
+                    showSecurityPopup("⚔️ TANDING", `${d.name} mengajak tanding!`, () => {
+                        $('#universal-popup').hide(); conn = i; myRole = 'white';
+                        conn.send({type: 'CHALLENGE_ACC', name: myName}); setupGameListener(); launchBoard('white');
+                    }, () => $('#universal-popup').hide());
+                } else if(d.type === 'MOVE') { game.move(d.move); board.position(game.fen()); checkGameOver(); }
+                else if(d.type === 'RESIGN') { finishGame(`${oppName} Menyerah`, "KAMU MENANG!", true); }
+            });
+        });
+
+        function startLobbySync() {
+            setInterval(() => {
+                if(!myName || !$('#main-menu').is(':visible')) return;
+                localStorage.setItem('chess_lobby_' + myPeerId, JSON.stringify({ name: myName, id: myPeerId, streak: accounts[myName].streak, time: Date.now() }));
+                $('#activeLobbies').empty();
+                for (let i = 0; i < localStorage.length; i++) {
+                    let k = localStorage.key(i);
+                    if (k.startsWith('chess_lobby_')) {
+                        let l = JSON.parse(localStorage.getItem(k));
+                        if (l.id !== myPeerId && (Date.now() - l.time < 8000)) {
+                            $('#activeLobbies').append(`<div class="item"><span><b>${l.name}</b> <span class="streak-badge">🔥 ${l.streak}</span></span><div><button class="btn-sm" style="background:var(--primary)" onclick="sendChallenge('${l.id}','${l.name}')">MAIN</button><button class="btn-sm" style="background:#555" onclick="sendFriendReq('${l.id}','${l.name}')">ADD</button></div></div>`);
+                        }
+                    }
+                }
+            }, 3000);
+        }
+
+        function updateFriendsUI() {
+            $('#friendsList').empty();
+            accounts[myName].friends.forEach((f) => {
+                let fStr = accounts[f.name] ? accounts[f.name].streak : 0;
+                $('#friendsList').append(`<div class="item"><span>👤 <b>${f.name}</b> <span class="streak-badge">🔥 ${fStr}</span></span><button class="btn-sm" style="background:var(--win)" onclick="sendChallenge('${f.id}','${f.name}')">MAIN</button></div>`);
+            });
+        }
+
+        function addFriendData(id, name) {
+            let myFs = accounts[myName].friends;
+            if(!myFs.find(f => f.name === name)) {
+                myFs.push({id: id, name: name}); save(); updateFriendsUI(); addInbox(`Berteman dengan ${name}`);
+            }
+        }
+
+        function sendFriendReq(tid, tName) { let c = peer.connect(tid); c.on('open', () => { c.send({type: 'FRIEND_REQ', name: myName}); alert("Request dikirim!"); }); }
+        function sendChallenge(tid, tName) { oppName = tName; conn = peer.connect(tid); conn.on('open', () => { conn.send({type: 'CHALLENGE_REQ', name: myName}); }); setupGameListener(); }
+        function setupGameListener() { conn.on('data', (d) => { if(d.type === 'CHALLENGE_ACC') { oppName = d.name; myRole='black'; launchBoard('black'); } else if(d.type === 'MOVE') { game.move(d.move); board.position(game.fen()); checkGameOver(); } else if(d.type === 'RESIGN') { finishGame(`${oppName} Menyerah`, "KAMU MENANG!", true); } }); }
+        function launchBoard(color) { $('#main-menu').hide(); $('#game-screen').show(); $('#role-tag').text("ANDA: " + (color === 'white' ? 'PUTIH' : 'HITAM')); setTimeout(() => { board = Chessboard('board', { draggable: true, orientation: color, position: 'start', onDragStart: (s, p) => { if (game.game_over() || (color === 'white' && p[0] === 'b') || (color === 'black' && p[0] === 'w') || (game.turn() !== color[0])) return false; }, onDrop: (s, t) => { let m = game.move({ from: s, to: t, promotion: 'q' }); if (!m) return 'snapback'; conn.send({type: 'MOVE', move: m}); checkGameOver(); }, pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png' }); }, 300); }
+        function resignGame() { if(confirm("Nyerah?")) { if(conn) conn.send({type: 'RESIGN'}); finishGame(`${oppName} menang`, "KAMU MENYERAH", false); } }
+        function backToMenu() { $('#result-overlay').hide(); $('#game-screen').hide(); $('#main-menu').show(); if(board) board.destroy(); game = new Chess(); updateFriendsUI(); }
+        function showSecurityPopup(t, m, y, n) { $('#pop-title').text(t); $('#pop-msg').text(m); $('#pop-yes').off().on('click', y); $('#pop-no').off().on('click', n); $('#universal-popup').fadeIn(); }
+        function save() { localStorage.setItem('chess_v11_acc', JSON.stringify(accounts)); }
+        function logout() { localStorage.removeItem('active_id_' + myName); sessionStorage.clear(); location.reload(); }
+        function copyId() { navigator.clipboard.writeText(myPeerId); alert("ID Disalin!"); }
+
+        $(document).ready(() => {
+            let saved = sessionStorage.getItem('chess_v11_session');
+            if(saved && accounts[saved]) { completeLogin(saved); }
+        });
+    </script>
+</body>
+</html>

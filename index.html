@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>Chess Pro - Professional Arena</title>
+    <title>Chess Pro - Elite AI Edition</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
@@ -13,201 +13,200 @@
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 
     <style>
-        :root { --p: #27ae60; --b: #0a0a0a; --c: #151515; --s: #2980b9; }
-        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--b); color: white; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .app { background: var(--c); width: 92%; max-width: 420px; padding: 30px; border-radius: 28px; border: 1px solid #222; box-shadow: 0 40px 100px rgba(0,0,0,0.8); text-align: center; }
+        :root { --p: #2ecc71; --b: #0a0a0a; --c: #151515; --s: #3498db; --r: #e74c3c; }
+        body { font-family: 'Inter', sans-serif; background: var(--b); color: white; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .app { background: var(--c); width: 90%; max-width: 400px; padding: 30px; border-radius: 25px; border: 1px solid #222; box-shadow: 0 40px 80px rgba(0,0,0,0.8); text-align: center; }
         
-        input { width: 100%; padding: 15px; margin: 10px 0; background: #202020; border: 1px solid #333; color: white; border-radius: 12px; box-sizing: border-box; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--p); box-shadow: 0 0 10px rgba(39, 174, 96, 0.2); }
-        button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; background: var(--p); color: white; transition: 0.2s; }
-        button:disabled { background: #333; opacity: 0.4; cursor: not-allowed; }
+        input { width: 100%; padding: 15px; margin: 10px 0; background: #111; border: 1px solid #333; color: white; border-radius: 12px; box-sizing: border-box; outline: none; }
+        button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; background: var(--p); color: white; transition: 0.3s; }
+        button:disabled { background: #333; opacity: 0.5; }
+        .btn-bot { background: var(--s); margin-top: 5px; }
+        .btn-mode { background: #222; border: 1px solid #444; margin: 5px 0; font-size: 13px; }
+        .btn-mode:hover { background: #333; }
         
-        #menu, #game, #reg { display: none; }
-        .lobby { background: #000; border-radius: 18px; padding: 15px; margin-top: 20px; border: 1px solid #222; height: 190px; overflow-y: auto; }
-        .p-card { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #1a1a1a; margin-bottom: 10px; border-radius: 12px; font-size: 14px; border: 1px solid #252525; }
+        #menu, #game, #reg, #bot-menu { display: none; }
+        .lobby { background: #000; border-radius: 15px; padding: 15px; margin-top: 20px; border: 1px solid #222; height: 150px; overflow-y: auto; }
+        .p-card { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #1a1a1a; margin-bottom: 8px; border-radius: 10px; border-left: 4px solid var(--s); }
         
-        /* CAPTCHA ANIMATION */
-        .cap-box { background: #fdfdfd; border-radius: 3px; padding: 12px; margin: 18px 0; display: flex; align-items: center; border: 1px solid #d1d1d1; color: #444; }
-        .chk-ui { width: 24px; height: 24px; border: 2px solid #c1c1c1; margin-right: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: white; transition: 0.2s; }
-        .chk-ui.loading { border-radius: 50%; border-top-color: #4285f4; animation: rotate 0.8s infinite linear; background: transparent; }
-        .chk-ui.checked { background: var(--p); border-color: var(--p); color: white; }
-        .chk-ui.checked::after { content: '✔'; font-weight: bold; }
-        @keyframes rotate { to { transform: rotate(360deg); } }
+        .cap-box { background: #fff; border-radius: 3px; padding: 10px; margin: 15px 0; display: flex; align-items: center; border: 1px solid #d3d3d3; color: #555; text-align: left; }
+        .chk { width: 22px; height: 22px; border: 2px solid #c1c1c1; margin-right: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: white; }
+        .chk.spin { border-radius: 50%; border-top-color: #4285f4; animation: s 0.8s infinite linear; }
+        .chk.ok { background: var(--p); border-color: var(--p); color: white; }
+        .chk.ok::after { content: '✔'; }
+        @keyframes s { to { transform: rotate(360deg); } }
 
-        #board { width: 100%; margin: 20px 0; border-radius: 12px; overflow: hidden; border: 4px solid #2a2a2a; }
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        #board { width: 100%; margin: 20px 0; border: 4px solid #333; border-radius: 10px; overflow: hidden; }
+        .pop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
     <div class="app">
         <div id="login">
-            <h1 style="color: var(--p); margin: 0; letter-spacing: -1px;">CHESS PRO</h1>
-            <p style="font-size: 11px; color: #666; margin-bottom: 30px;">GLOBAL CHESS NETWORK</p>
+            <h1 style="color: var(--p); margin: 0;">CHESS PRO</h1>
+            <p style="font-size: 10px; color: #666; letter-spacing: 2px; margin-bottom: 30px;">AI & MULTIPLAYER</p>
             <input type="text" id="l-u" placeholder="Username">
             <input type="password" id="l-p" placeholder="Password">
             <div class="cap-box">
-                <div class="chk-ui" id="l-c" onclick="runVerify('login')"></div>
-                <div style="font-size: 14px; font-weight: 500;">I'm not a robot</div>
+                <div class="chk" id="l-c" onclick="v('login')"></div>
+                <div style="font-size: 13px;">I'm not a robot</div>
             </div>
-            <button id="l-b" onclick="handleLogin()" disabled>LOGIN</button>
-            <p style="font-size: 13px; color: #888;">Belum punya akun? <span onclick="navTo('reg')" style="color:var(--p); cursor:pointer; font-weight:bold;">Daftar</span></p>
+            <button id="l-b" onclick="hL()" disabled>MASUK</button>
+            <p style="font-size: 12px;">Baru? <span onclick="go('reg')" style="color:var(--p); cursor:pointer;">Daftar</span></p>
         </div>
 
         <div id="reg">
-            <h2 style="color: var(--s);">BUAT AKUN BARU</h2>
-            <input type="text" id="r-u" placeholder="Pilih Username">
-            <input type="password" id="r-p" placeholder="Pilih Password">
+            <h2>DAFTAR</h2>
+            <input type="text" id="r-u" placeholder="Username">
+            <input type="password" id="r-p" placeholder="Password">
             <div class="cap-box">
-                <div class="chk-ui" id="r-c" onclick="runVerify('reg')"></div>
-                <div style="font-size: 14px;">I'm not a robot</div>
+                <div class="chk" id="r-c" onclick="v('reg')"></div>
+                <div style="font-size: 13px;">I'm not a robot</div>
             </div>
-            <button id="r-b" onclick="handleReg()" disabled>DAFTAR SEKARANG</button>
-            <p style="font-size: 13px;"><span onclick="navTo('login')" style="color:var(--p); cursor:pointer;">Kembali ke Login</span></p>
+            <button id="r-b" onclick="hR()" disabled>DAFTAR</button>
+            <p style="font-size: 12px;"><span onclick="go('login')" style="color:var(--p); cursor:pointer;">Balik</span></p>
         </div>
 
         <div id="menu">
-            <div style="text-align: left; margin-bottom: 25px;">
-                <div id="my-username" style="font-size: 26px; font-weight: bold; color: var(--p);"></div>
-                <div style="font-size: 12px; color: #f1c40f;">💎 PREMIUM MEMBER</div>
-            </div>
-            <div class="lobby">
-                <div style="font-size: 10px; font-weight: bold; color: #444; margin-bottom: 12px; text-align: left; letter-spacing: 1px;">PEMAIN YANG SEDANG ONLINE</div>
-                <div id="player-list"></div>
-            </div>
-            <button onclick="doLogout()" style="background: transparent; color: #555; border: 1px solid #333; margin-top: 30px; font-size: 11px;">KELUAR AKUN</button>
+            <div id="my-u" style="font-size: 24px; font-weight: bold; color: var(--p); text-align: left; margin-bottom: 20px;"></div>
+            <button class="btn-bot" onclick="go('bot-menu')">VS KOMPUTER (AI)</button>
+            <div class="lobby"><div id="plist"></div></div>
+            <button onclick="lo()" style="background:none; border:1px solid #333; color:#555; margin-top:20px; font-size:11px;">LOGOUT</button>
+        </div>
+
+        <div id="bot-menu">
+            <h3>PILIH LEVEL AI</h3>
+            <button class="btn-mode" onclick="startBot('easy')">EASY (Asal Jalan)</button>
+            <button class="btn-mode" onclick="startBot('medium')">MEDIUM (Mulai Makan)</button>
+            <button class="btn-mode" onclick="startBot('hard')">HARD (Cukup Sulit)</button>
+            <button onclick="go('menu')" style="background:none; color:var(--r)">BATAL</button>
         </div>
 
         <div id="game">
-            <div id="game-info" style="font-size: 12px; background: #222; padding: 12px; border-radius: 12px; margin-bottom: 15px; color: #aaa;"></div>
+            <div id="st" style="font-size: 11px; margin-bottom: 10px; color:#888;"></div>
             <div id="board"></div>
-            <button onclick="askResign()" style="background: #e74c3c;">MENYERAH</button>
+            <button onclick="rs()" style="background: var(--r);">MENYERAH / KELUAR</button>
         </div>
     </div>
 
-    <div class="modal" id="result-screen">
-        <h1 id="res-msg" style="font-size: 60px; margin: 0;"></h1>
-        <p id="res-sub" style="color: #777; margin-bottom: 40px;"></p>
-        <button onclick="location.reload()" style="width: 240px;">KEMBALI KE LOBBY</button>
+    <div class="pop" id="fin">
+        <h1 id="f-t" style="font-size: 50px;"></h1>
+        <button onclick="location.reload()" style="width: 200px;">KE LOBBY</button>
     </div>
 
     <script>
-        let board, game = new Chess(), peer = new Peer(), conn = null, side = '', peerID = '';
-        let me = "", op = "", isVerified = { login: false, reg: false };
-        let db = JSON.parse(localStorage.getItem('chess_vFinal_PRO') || '{}');
+        let b, g = new Chess(), p = new Peer(), cn = null, sd = '', mid = '', botLevel = null;
+        let me = "", vOk = { login: false, reg: false };
+        let db = JSON.parse(localStorage.getItem('chess_v_ai_1') || '{}');
 
-        function runVerify(mode) {
-            if(isVerified[mode]) return;
-            $(`#${mode[0]}-c`).addClass('loading');
-            setTimeout(() => {
-                $(`#${mode[0]}-c`).removeClass('loading').addClass('checked');
-                isVerified[mode] = true;
-                $(`#${mode[0]}-b`).prop('disabled', false);
-            }, 1500);
+        // --- AUTH SYSTEM ---
+        function v(m) {
+            if(vOk[m]) return;
+            $(`#${m[0]}-c`).addClass('spin');
+            setTimeout(() => { $(`#${m[0]}-c`).removeClass('spin').addClass('ok'); vOk[m]=true; $(`#${m[0]}-b`).prop('disabled', false); }, 800);
+        }
+        function go(m) { 
+            $('#login,#reg,#menu,#bot-menu,#game').hide(); 
+            $(`#${m}`).fadeIn(); 
+        }
+        function hR() {
+            let u=$('#r-u').val().trim(), p=$('#r-p').val().trim();
+            if(!u || db[u]) return alert("User ada!");
+            db[u]={p}; localStorage.setItem('chess_v_ai_1', JSON.stringify(db)); st(u);
+        }
+        function hL() {
+            let u=$('#l-u').val().trim(), p=$('#l-p').val().trim();
+            if(db[u] && db[u].p===p) st(u); else alert("Salah!");
+        }
+        function st(u) {
+            me=u; sessionStorage.setItem('u', u);
+            go('menu'); $('#my-u').text(u);
+            loop();
         }
 
-        function navTo(mode) {
-            $('.chk-ui').removeClass('checked loading'); isVerified = {login:false, reg:false};
-            $('button').prop('disabled', true);
-            $('#login, #reg').hide(); $(`#${mode}`).fadeIn();
-        }
-
-        function handleReg() {
-            let u = $('#r-u').val().trim(), p = $('#r-p').val().trim();
-            if(!u || db[u]) return alert("Username sudah terpakai!");
-            db[u] = { p, s: 0 }; saveDB(); startSession(u);
-        }
-
-        function handleLogin() {
-            let u = $('#l-u').val().trim(), p = $('#l-p').val().trim();
-            if(db[u] && db[u].p === p) startSession(u);
-            else alert("Username atau Password salah!");
-        }
-
-        function startSession(u) {
-            me = u; sessionStorage.setItem('active_user', u);
-            $('#login, #reg').hide(); $('#menu').fadeIn();
-            $('#my-username').text(u);
-            runLobbySync();
-        }
-
-        peer.on('open', (id) => peerID = id);
-        peer.on('connection', (c) => {
-            conn = c;
-            conn.on('data', (data) => {
-                if(data.type === 'INVITE') {
-                    if(confirm(data.from + " menantang kamu tanding! Terima?")) {
-                        side = 'white'; conn.send({type:'ACCEPT', from:me}); launchGame('white');
-                    }
-                } else if(data.type === 'ACCEPT') { side = 'black'; launchGame('black'); }
-                else if(data.type === 'MOVE') { game.move(data.move); board.position(game.fen()); checkGameOver(); }
-                else if(data.type === 'RESIGN') { showEnd("MENANG", "Lawan menyerah!"); }
+        // --- MULTIPLAYER SYSTEM ---
+        p.on('open', (id) => mid=id);
+        p.on('connection', (c) => {
+            cn = c;
+            cn.on('data', (d) => {
+                if(d.t==='I') { if(confirm(d.f+" mengajak main!")) { sd='white'; cn.send({t:'A',f:me}); ln('white', false); } }
+                else if(d.t==='A') { sd='black'; ln('black', false); }
+                else if(d.t==='M') { g.move(d.m); b.position(g.fen()); chk(); }
+                else if(d.t==='R') { end("MENANG"); }
             });
         });
-
-        function runLobbySync() {
+        function loop() {
             setInterval(() => {
                 if(!me || !$('#menu').is(':visible')) return;
-                localStorage.setItem('online_chess_'+peerID, JSON.stringify({name:me, time:Date.now()}));
-                $('#player-list').empty();
+                localStorage.setItem('on_'+mid, JSON.stringify({n:me, t:Date.now()}));
+                $('#plist').empty();
                 for(let i=0; i<localStorage.length; i++){
-                    let key = localStorage.key(i);
-                    if(key.startsWith('online_chess_') && key !== 'online_chess_'+peerID){
-                        let pData = JSON.parse(localStorage.getItem(key));
-                        if(Date.now() - pData.time < 5000) {
-                            $('#player-list').append(`<div class="p-card">
-                                <span><b>${pData.name}</b></span>
-                                <button onclick="sendInvite('${key.split('_')[2]}','${pData.name}')" style="width:80px; padding:8px; margin:0; font-size:11px;">TANTANG</button>
-                            </div>`);
-                        } else { localStorage.removeItem(key); } // Clean up inactive
+                    let k=localStorage.key(i);
+                    if(k.startsWith('on_') && k!=='on_'+mid){
+                        let x=JSON.parse(localStorage.getItem(k));
+                        if(Date.now()-x.t < 4000) $('#plist').append(`<div class="p-card"><b>${x.n}</b> <button onclick="inv('${k.split('_')[1]}')" style="width:70px; padding:6px; margin:0; font-size:11px;">TANTANG</button></div>`);
                     }
                 }
             }, 3000);
         }
+        function inv(tid) { cn=p.connect(tid); cn.on('open', () => cn.send({t:'I', f:me})); }
 
-        function sendInvite(targetID, targetName) {
-            op = targetName; conn = peer.connect(targetID);
-            conn.on('open', () => conn.send({type:'INVITE', from:me}));
+        // --- AI BOT ENGINE ---
+        function startBot(lv) {
+            botLevel = lv;
+            sd = 'white';
+            ln('white', true);
         }
 
-        function launchGame(s) {
-            $('#menu').hide(); $('#game').fadeIn();
-            $('#game-info').text("Kamu bermain sebagai: " + (s==='white'?'PUTIH':'HITAM'));
+        function makeBotMove() {
+            if (g.game_over()) return;
+            let moves = g.moves();
+            let move;
+
+            if (botLevel === 'easy') {
+                move = moves[Math.floor(Math.random() * moves.length)];
+            } else {
+                // Medium & Hard use basic piece value evaluation
+                moves.sort((a, b) => {
+                    let moveA = g.move(a); g.undo();
+                    let moveB = g.move(b); g.undo();
+                    return (moveB.captured ? 1 : 0) - (moveA.captured ? 1 : 0);
+                });
+                move = (botLevel === 'hard' && Math.random() > 0.2) ? moves[0] : moves[Math.floor(Math.random() * Math.min(3, moves.length))];
+            }
+
+            g.move(move);
+            b.position(g.fen());
+            chk();
+        }
+
+        // --- CORE GAME ---
+        function ln(s, isBot) {
+            go('game');
+            g.reset();
+            $('#st').text(isBot ? "MODE: VS BOT (" + botLevel.toUpperCase() + ")" : "MODE: ONLINE VS PLAYER");
             setTimeout(() => {
-                board = Chessboard('board', {
+                b = Chessboard('board', {
                     draggable: true, orientation: s, position: 'start',
-                    onDragStart: (source, piece) => { if(game.game_over() || game.turn() !== s[0]) return false; },
-                    onDrop: (source, target) => {
-                        let move = game.move({from:source, to:target, promotion:'q'});
-                        if(!move) return 'snapback';
-                        conn.send({type:'MOVE', move:move}); checkGameOver();
+                    onDragStart: (x,y,p) => { if(g.game_over() || g.turn()!==s[0]) return false; },
+                    onDrop: (x,y) => {
+                        let m=g.move({from:x, to:y, promotion:'q'});
+                        if(!m) return 'snapback';
+                        if(!isBot) cn.send({t:'M', m:m});
+                        chk();
+                        if(isBot) setTimeout(makeBotMove, 600);
                     },
                     pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
                 });
             }, 500);
         }
 
-        function checkGameOver() {
-            if(game.game_over()) {
-                let win = game.in_checkmate() && game.turn() !== side[0];
-                showEnd(win ? "MENANG" : "KALAH", win ? "Skakmat yang hebat!" : "Kamu terjebak skakmat.");
-            }
-        }
+        function chk() { if(g.game_over()) end(g.in_checkmate() ? (g.turn()===sd[0]?"KALAH":"MENANG") : "SERI"); }
+        function end(t) { $('#f-t').text(t); $('#fin').css('display','flex'); }
+        function lo() { sessionStorage.clear(); location.reload(); }
+        function rs() { if(confirm("Keluar dari game?")) location.reload(); }
 
-        function showEnd(title, sub) {
-            $('#res-msg').text(title).css('color', title === 'MENANG' ? 'var(--p)' : '#e74c3c');
-            $('#res-sub').text(sub);
-            $('#result-screen').css('display', 'flex');
-        }
-
-        function saveDB() { localStorage.setItem('chess_vFinal_PRO', JSON.stringify(db)); }
-        function doLogout() { localStorage.removeItem('online_chess_'+peerID); sessionStorage.clear(); location.reload(); }
-        function askResign() { if(confirm("Yakin ingin menyerah?")) { conn.send({type:'RESIGN'}); showEnd("KALAH", "Kamu menyerah dari pertandingan."); } }
-
-        $(document).ready(() => {
-            let savedUser = sessionStorage.getItem('active_user');
-            if(savedUser && db[savedUser]) startSession(savedUser);
-        });
+        $(document).ready(() => { let s=sessionStorage.getItem('u'); if(s && db[s]) st(s); });
     </script>
 </body>
 </html>

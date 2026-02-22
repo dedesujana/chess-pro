@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chess Pro - Manual Connect</title>
+    <title>Chess Pro - Elite Edition</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
@@ -13,169 +13,203 @@
 
     <style>
         :root { --p: #2ecc71; --b: #0a0a0a; --c: #151515; --s: #3498db; --r: #e74c3c; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--b); color: white; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .app { background: var(--c); width: 90%; max-width: 400px; padding: 25px; border-radius: 20px; border: 1px solid #333; box-shadow: 0 30px 60px rgba(0,0,0,0.8); text-align: center; }
+        body { font-family: 'Inter', sans-serif; background: var(--b); color: white; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        .app { background: var(--c); width: 92%; max-width: 400px; padding: 25px; border-radius: 20px; border: 1px solid #333; position: relative; max-height: 90vh; overflow-y: auto; }
         
-        input { width: 100%; padding: 14px; margin: 8px 0; background: #111; border: 1px solid #333; color: white; border-radius: 10px; box-sizing: border-box; text-align: center; }
-        button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; background: var(--p); color: white; transition: 0.2s; }
-        .btn-blue { background: var(--s); }
-        .btn-red { background: var(--r); }
-        .btn-outline { background: transparent; border: 1px solid #444; color: #888; margin-top: 15px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #111; border: 1px solid #333; color: white; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; background: var(--p); color: white; }
         
-        #menu, #game, #reg, #bot-menu, #multi-menu { display: none; }
-        .id-box { background: #000; padding: 10px; border-radius: 8px; border: 1px dashed var(--s); font-family: monospace; color: var(--s); font-size: 18px; margin: 10px 0; cursor: pointer; }
+        /* CAPTCHA STYLING */
+        #captcha-win { display: none; position: absolute; inset: 10px; background: white; color: #333; z-index: 2000; border-radius: 10px; padding: 15px; text-align: left; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .grid-cap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 10px; }
+        .cap-img { width: 100%; aspect-ratio: 1; background: #eee; cursor: pointer; border: 2px solid transparent; border-radius: 4px; object-fit: cover; }
+        .cap-img.selected { border-color: #4285f4; opacity: 0.7; }
+
+        /* LOBBY STYLING */
+        .lobby-scroll { height: 180px; overflow-y: scroll; background: #000; border-radius: 10px; padding: 10px; border: 1px solid #222; margin-top: 10px; }
+        .p-card { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #1a1a1a; margin-bottom: 5px; border-radius: 6px; font-size: 13px; }
         
-        #board { width: 100%; margin: 15px 0; border: 4px solid #333; border-radius: 8px; }
-        .pop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        #menu, #game, #reg, #multi { display: none; }
+        .id-badge { background: #222; padding: 10px; border-radius: 8px; color: var(--s); font-family: monospace; font-size: 14px; margin: 10px 0; border: 1px dashed #444; }
+        
+        #board { width: 100%; margin: 10px 0; border-radius: 5px; border: 3px solid #333; }
+        .pop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
     <div class="app">
+        <div id="captcha-win">
+            <div style="background: #4285f4; color: white; padding: 15px; margin: -15px -15px 15px -15px; border-radius: 10px 10px 0 0;">
+                <p style="margin:0; font-size:12px;">Select all squares with</p>
+                <b id="cap-target" style="font-size:20px;">TRAFFIC LIGHTS</b>
+            </div>
+            <div class="grid-cap" id="cap-grid"></div>
+            <button onclick="verifyCaptcha()" style="margin-top:15px; background:#4285f4;">VERIFY</button>
+        </div>
+
         <div id="login">
             <h1 style="color: var(--p); margin: 0;">CHESS PRO</h1>
-            <p style="font-size: 11px; color: #555; margin-bottom: 25px;">STABLE EDITION</p>
+            <p style="font-size: 11px; color: #555; margin-bottom: 20px;">ADVANCED SYSTEM</p>
             <input type="text" id="l-u" placeholder="Username">
             <input type="password" id="l-p" placeholder="Password">
-            <button onclick="hLogin()">MASUK</button>
+            <button onclick="openCaptcha('login')">MASUK</button>
             <p style="font-size: 12px;">Baru? <span onclick="nav('reg')" style="color:var(--p); cursor:pointer;">Daftar</span></p>
         </div>
 
         <div id="reg">
-            <h2>BUAT AKUN</h2>
-            <input type="text" id="r-u" placeholder="Pilih Username">
-            <input type="password" id="r-p" placeholder="Pilih Password">
-            <button onclick="hReg()">DAFTAR SEKARANG</button>
-            <p style="font-size: 12px;"><span onclick="nav('login')" style="color:var(--p); cursor:pointer;">Kembali</span></p>
+            <h2>DAFTAR</h2>
+            <input type="text" id="r-u" placeholder="Username Baru">
+            <input type="password" id="r-p" placeholder="Password Baru">
+            <button onclick="openCaptcha('reg')">DAFTAR SEKARANG</button>
+            <button onclick="nav('login')" style="background:none; color:#666;">Kembali</button>
         </div>
 
         <div id="menu">
-            <div id="u-display" style="font-size: 20px; font-weight: bold; color: var(--p); margin-bottom: 20px;"></div>
-            <button class="btn-blue" onclick="nav('multi-menu')">MULTIPLAYER (HOST/ADD)</button>
-            <button onclick="nav('bot-menu')">VS KOMPUTER (AI)</button>
-            <button class="btn-outline" onclick="logout()">LOGOUT</button>
+            <h3 id="u-display" style="text-align: left; color: var(--p);"></h3>
+            <button onclick="nav('multi')" style="background: var(--s);">MULTIPLAYER MODE</button>
+            <button onclick="playAI()" style="background: #444;">VS KOMPUTER</button>
+            
+            <div style="margin-top: 20px; text-align: left;">
+                <span style="font-size: 12px; color:#888;">SEARCH FRIENDS / PLAYERS</span>
+                <input type="text" id="search-input" placeholder="Cari nama..." onkeyup="searchPlayer()">
+                <div class="lobby-scroll" id="plist"></div>
+            </div>
+            <button onclick="logout()" style="background:none; border:1px solid #333; color:#444; font-size:10px; margin-top:10px;">LOGOUT</button>
         </div>
 
-        <div id="multi-menu">
-            <h3>MULTIPLAYER</h3>
-            <p style="font-size: 12px; color: #888;">ID Kamu (Berikan ke teman):</p>
-            <div class="id-box" id="my-id" onclick="copyID()">MEMUAT ID...</div>
+        <div id="multi">
+            <h3>HOST & JOIN</h3>
+            <p style="font-size:11px; color:#888;">ID Kamu (Klik untuk salin):</p>
+            <div class="id-badge" id="my-id" onclick="copyID()">MEMUAT...</div>
             
-            <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
-            
-            <p style="font-size: 12px; color: #888;">Masukkan ID Teman (ADD):</p>
-            <input type="text" id="join-id" placeholder="Paste ID Teman Disini">
-            <button class="btn-blue" onclick="joinGame()">ADD & PLAY</button>
-            <button class="btn-outline" onclick="nav('menu')">KEMBALI</button>
-        </div>
-
-        <div id="bot-menu">
-            <h3>PILIH LEVEL AI</h3>
-            <button onclick="startAI('easy')">EASY</button>
-            <button class="btn-blue" onclick="startAI('medium')">MEDIUM</button>
-            <button class="btn-red" onclick="startAI('hard')">HARD</button>
-            <button class="btn-outline" onclick="nav('menu')">BATAL</button>
+            <input type="text" id="join-id" placeholder="Masukkan ID Teman (ADD)">
+            <button onclick="addFriendAndPlay()" style="background: var(--s);">ADD FRIEND & PLAY</button>
+            <button onclick="nav('menu')" style="background:none; color:var(--r);">KEMBALI</button>
         </div>
 
         <div id="game">
-            <div id="g-status" style="font-size: 11px; color: #888;"></div>
+            <div id="g-info" style="font-size: 11px; color:#888;"></div>
             <div id="board"></div>
-            <button class="btn-red" onclick="resign()">KELUAR / MENYERAH</button>
+            <button onclick="location.reload()" style="background: var(--r);">KELUAR</button>
         </div>
     </div>
 
-    <div class="pop" id="res-modal">
-        <h1 id="res-text" style="font-size: 50px;"></h1>
-        <button onclick="location.reload()" style="width: 200px;">BALIK KE MENU</button>
+    <div class="pop" id="res-pop">
+        <h1 id="res-txt"></h1>
+        <button onclick="location.reload()" style="width:180px;">KE LOBBY</button>
     </div>
 
     <script>
-        let board, game = new Chess(), peer = new Peer(), conn = null, mySide = '', botLV = null;
-        let me = "";
-        let db = JSON.parse(localStorage.getItem('chess_manual_db') || '{}');
+        let board, game = new Chess(), peer = new Peer(), conn, mySide, activeUser;
+        let db = JSON.parse(localStorage.getItem('chess_elite_db') || '{}');
+        let currentMode = '';
 
-        // --- PEER SETUP ---
-        peer.on('open', (id) => { $('#my-id').text(id); });
+        // --- CAPTCHA SIMULATOR ---
+        const captchaPool = [
+            { t: 'TRAFFIC LIGHTS', img: 'https://images.unsplash.com/photo-1518005020251-582877bfc90c?auto=format&fit=crop&w=100&q=60' },
+            { t: 'CROSSWALK', img: 'https://images.unsplash.com/photo-1541250848049-b4f71413cc30?auto=format&fit=crop&w=100&q=60' },
+            { t: 'BICYCLE', img: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=100&q=60' }
+        ];
+
+        function openCaptcha(mode) {
+            currentMode = mode;
+            $('#cap-grid').empty();
+            let target = captchaPool[Math.floor(Math.random()*3)];
+            $('#cap-target').text(target.t);
+            for(let i=0; i<9; i++) {
+                $('#cap-grid').append(`<img src="${target.img}" class="cap-img" onclick="$(this).toggleClass('selected')">`);
+            }
+            $('#captcha-win').fadeIn();
+        }
+
+        function verifyCaptcha() {
+            if($('.cap-img.selected').length < 2) return alert("Pilih gambar yang sesuai!");
+            $('#captcha-win').fadeOut();
+            if(currentMode === 'login') hLogin(); else hReg();
+        }
+
+        // --- AUTH & NAV ---
+        function nav(id) { $('.app > div').hide(); $(`#${id}`).show(); }
         
-        peer.on('connection', (c) => {
+        function hReg() {
+            let u=$('#r-u').val(), p=$('#r-p').val();
+            if(!u || db[u]) return alert("Gagal!");
+            db[u]={p}; localStorage.setItem('chess_elite_db', JSON.stringify(db)); hSession(u);
+        }
+
+        function hLogin() {
+            let u=$('#l-u').val(), p=$('#l-p').val();
+            if(db[u] && db[u].p===p) hSession(u); else alert("Salah!");
+        }
+
+        function hSession(u) { activeUser=u; sessionStorage.setItem('u', u); nav('menu'); $('#u-display').text("User: "+u); startLobby(); }
+
+        // --- MULTIPLAYER ---
+        peer.on('open', id => $('#my-id').text(id));
+        peer.on('connection', c => {
             conn = c;
-            conn.on('data', (data) => {
-                if(data.t === 'INV') {
-                    if(confirm("Ada tantangan masuk! Main?")) {
-                        mySide = 'white'; conn.send({t:'ACC'}); initG('white', false);
-                    }
-                } else if(data.t === 'ACC') {
-                    mySide = 'black'; initG('black', false);
-                } else if(data.t === 'MOV') {
-                    game.move(data.m); board.position(game.fen()); checkEnd();
-                } else if(data.t === 'RES') { finish("MENANG"); }
+            conn.on('data', d => {
+                if(d.t==='INV') confirm(d.f+" mengajak main?") ? (mySide='white', conn.send({t:'ACC',f:activeUser}), initG('white')) : null;
+                else if(d.t==='ACC') { mySide='black'; initG('black'); }
+                else if(d.t==='MOV') { game.move(d.m); board.position(game.fen()); checkEnd(); }
             });
         });
 
-        function joinGame() {
-            let tid = $('#join-id').val().trim();
-            if(!tid) return alert("Masukkan ID dulu!");
-            conn = peer.connect(tid);
-            conn.on('open', () => {
-                alert("Menghubungkan ke teman...");
-                conn.send({t:'INV'});
-            });
+        function addFriendAndPlay() {
+            let id = $('#join-id').val();
+            if(!id) return;
+            conn = peer.connect(id);
+            conn.on('open', () => conn.send({t:'INV', f:activeUser}));
         }
 
-        function copyID() {
-            let id = $('#my-id').text();
-            navigator.clipboard.writeText(id);
-            alert("ID Disalin: " + id);
+        function startLobby() {
+            setInterval(() => {
+                if(!activeUser || !$('#menu').is(':visible')) return;
+                localStorage.setItem('online_'+activeUser, JSON.stringify({id: $('#my-id').text(), t: Date.now()}));
+                searchPlayer();
+            }, 3000);
         }
 
-        // --- NAVIGATION & AUTH ---
-        function nav(id) { $('#login,#reg,#menu,#bot-menu,#multi-menu,#game').hide(); $(`#${id}`).fadeIn(); }
-
-        function hReg() {
-            let u=$('#r-u').val().trim(), p=$('#r-p').val().trim();
-            if(!u || db[u]) return alert("User sudah ada!");
-            db[u]={p}; localStorage.setItem('chess_manual_db', JSON.stringify(db)); hSes(u);
-        }
-        function hLogin() {
-            let u=$('#l-u').val().trim(), p=$('#l-p').val().trim();
-            if(db[u] && db[u].p===p) hSes(u); else alert("Login Gagal!");
-        }
-        function hSes(u) { me=u; sessionStorage.setItem('u', u); nav('menu'); $('#u-display').text("Halo, "+u); }
-
-        // --- BOT AI ---
-        function startAI(lv) { botLV=lv; mySide='white'; initG('white', true); }
-        function aiMove() {
-            let moves = game.moves();
-            if (game.game_over()) return;
-            let m = (botLV==='easy') ? moves[Math.floor(Math.random()*moves.length)] : moves[0];
-            game.move(m); board.position(game.fen()); checkEnd();
+        function searchPlayer() {
+            let q = $('#search-input').val().toLowerCase();
+            $('#plist').empty();
+            for(let i=0; i<localStorage.length; i++){
+                let k = localStorage.key(i);
+                if(k.startsWith('online_')){
+                    let u = k.split('_')[1];
+                    let d = JSON.parse(localStorage.getItem(k));
+                    if(u !== activeUser && Date.now()-d.t < 5000 && u.includes(q)){
+                        $('#plist').append(`<div class="p-card"><b>${u}</b> <button onclick="autoConnect('${d.id}')" style="width:70px; padding:5px; margin:0; background:var(--s); font-size:10px;">PLAY</button></div>`);
+                    }
+                }
+            }
         }
 
-        // --- GAME CORE ---
-        function initG(side, isBot) {
+        function autoConnect(id) { $('#join-id').val(id); addFriendAndPlay(); }
+        function copyID() { navigator.clipboard.writeText($('#my-id').text()); alert("ID Disalin!"); }
+
+        // --- GAME ---
+        function initG(s) {
             nav('game'); game.reset();
-            $('#g-status').text(isBot ? "VS KOMPUTER" : "VS PEMAIN");
             setTimeout(() => {
                 board = Chessboard('board', {
-                    draggable: true, orientation: side, position: 'start',
-                    onDrop: (s, t) => {
-                        let m = game.move({from: s, to: t, promotion: 'q'});
-                        if (!m) return 'snapback';
-                        if (!isBot) conn.send({t:'MOV', m:m});
-                        checkEnd();
-                        if (isBot) setTimeout(aiMove, 600);
+                    draggable: true, orientation: s, position: 'start',
+                    onDrop: (a, b) => {
+                        let m = game.move({from:a, to:b, promotion:'q'});
+                        if(!m) return 'snapback';
+                        conn.send({t:'MOV', m:m}); checkEnd();
                     },
                     pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
                 });
             }, 500);
         }
 
-        function checkEnd() { if(game.game_over()) finish(game.in_checkmate() ? (game.turn()===mySide[0]?"KALAH":"MENANG") : "SERI"); }
-        function finish(t) { $('#res-text').text(t); $('#res-modal').css('display','flex'); }
+        function playAI() { mySide='white'; initG('white'); setInterval(() => { if(game.turn()==='b') { let m=game.moves()[0]; game.move(m); board.position(game.fen()); checkEnd(); } }, 1000); }
+        function checkEnd() { if(game.game_over()) { $('#res-txt').text("GAME OVER"); $('#res-pop').css('display','flex'); } }
         function logout() { sessionStorage.clear(); location.reload(); }
-        function resign() { if(confirm("Keluar?")) { if(conn) conn.send({t:'RES'}); location.reload(); } }
 
-        $(document).ready(() => { let s=sessionStorage.getItem('u'); if(s && db[s]) hSes(s); });
+        $(document).ready(() => { let s=sessionStorage.getItem('u'); if(s) hSession(s); });
     </script>
 </body>
 </html>

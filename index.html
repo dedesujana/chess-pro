@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chess Pro - Official Domain</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Chess Pro - Professional Arena</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
@@ -12,196 +13,200 @@
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
 
     <style>
-        :root { --main: #27ae60; --bg: #0d0d0d; --card: #1a1a1a; --text: #ecf0f1; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .app-container { background: var(--card); width: 90%; max-width: 400px; padding: 30px; border-radius: 25px; border: 1px solid #333; box-shadow: 0 30px 60px rgba(0,0,0,0.8); text-align: center; }
+        :root { --p: #27ae60; --b: #0a0a0a; --c: #151515; --s: #2980b9; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--b); color: white; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .app { background: var(--c); width: 92%; max-width: 420px; padding: 30px; border-radius: 28px; border: 1px solid #222; box-shadow: 0 40px 100px rgba(0,0,0,0.8); text-align: center; }
         
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #444; color: white; border-radius: 10px; box-sizing: border-box; }
-        button { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; background: var(--main); color: white; transition: 0.3s; }
-        button:disabled { opacity: 0.3; cursor: not-allowed; }
+        input { width: 100%; padding: 15px; margin: 10px 0; background: #202020; border: 1px solid #333; color: white; border-radius: 12px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--p); box-shadow: 0 0 10px rgba(39, 174, 96, 0.2); }
+        button { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; background: var(--p); color: white; transition: 0.2s; }
+        button:disabled { background: #333; opacity: 0.4; cursor: not-allowed; }
         
         #menu, #game, #reg { display: none; }
-        .lobby { background: #111; border-radius: 15px; padding: 15px; margin-top: 20px; border: 1px solid #222; max-height: 200px; overflow-y: auto; }
-        .player { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #222; margin-bottom: 8px; border-radius: 8px; font-size: 14px; }
+        .lobby { background: #000; border-radius: 18px; padding: 15px; margin-top: 20px; border: 1px solid #222; height: 190px; overflow-y: auto; }
+        .p-card { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #1a1a1a; margin-bottom: 10px; border-radius: 12px; font-size: 14px; border: 1px solid #252525; }
         
-        /* CAPTCHA STYLE */
-        .captcha-box { background: #f9f9f9; border-radius: 4px; padding: 10px; margin: 15px 0; display: flex; align-items: center; color: #555; font-size: 13px; }
-        .circle { width: 22px; height: 22px; border: 2px solid #ccc; margin-right: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: white; }
-        .circle.load { border-radius: 50%; border-top-color: #4285f4; animation: spin 1s infinite linear; }
-        .circle.done { background: var(--main); border-color: var(--main); color: white; }
-        .circle.done::after { content: '✓'; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* CAPTCHA ANIMATION */
+        .cap-box { background: #fdfdfd; border-radius: 3px; padding: 12px; margin: 18px 0; display: flex; align-items: center; border: 1px solid #d1d1d1; color: #444; }
+        .chk-ui { width: 24px; height: 24px; border: 2px solid #c1c1c1; margin-right: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: white; transition: 0.2s; }
+        .chk-ui.loading { border-radius: 50%; border-top-color: #4285f4; animation: rotate 0.8s infinite linear; background: transparent; }
+        .chk-ui.checked { background: var(--p); border-color: var(--p); color: white; }
+        .chk-ui.checked::after { content: '✔'; font-weight: bold; }
+        @keyframes rotate { to { transform: rotate(360deg); } }
 
-        #board { width: 100%; margin: 20px 0; border-radius: 8px; overflow: hidden; border: 3px solid #333; }
-        #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
+        #board { width: 100%; margin: 20px 0; border-radius: 12px; overflow: hidden; border: 4px solid #2a2a2a; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
+    <div class="app">
         <div id="login">
-            <h1 style="color: var(--main); margin-bottom: 5px;">CHESS PRO</h1>
-            <p style="font-size: 12px; color: #777; margin-bottom: 30px;">GLOBAL MULTIPLAYER</p>
+            <h1 style="color: var(--p); margin: 0; letter-spacing: -1px;">CHESS PRO</h1>
+            <p style="font-size: 11px; color: #666; margin-bottom: 30px;">GLOBAL CHESS NETWORK</p>
             <input type="text" id="l-u" placeholder="Username">
             <input type="password" id="l-p" placeholder="Password">
-            <div class="captcha-box">
-                <div class="circle" id="l-c" onclick="verify('login')"></div> I'm not a robot
+            <div class="cap-box">
+                <div class="chk-ui" id="l-c" onclick="runVerify('login')"></div>
+                <div style="font-size: 14px; font-weight: 500;">I'm not a robot</div>
             </div>
-            <button id="l-b" onclick="handleL()" disabled>MASUK</button>
-            <p style="font-size: 12px;">Baru? <span onclick="nav('reg')" style="color:var(--main); cursor:pointer;">Daftar Akun</span></p>
+            <button id="l-b" onclick="handleLogin()" disabled>LOGIN</button>
+            <p style="font-size: 13px; color: #888;">Belum punya akun? <span onclick="navTo('reg')" style="color:var(--p); cursor:pointer; font-weight:bold;">Daftar</span></p>
         </div>
 
         <div id="reg">
-            <h2>BUAT AKUN</h2>
-            <input type="text" id="r-u" placeholder="Username">
-            <input type="password" id="r-p" placeholder="Password">
-            <div class="captcha-box">
-                <div class="circle" id="r-c" onclick="verify('reg')"></div> I'm not a robot
+            <h2 style="color: var(--s);">BUAT AKUN BARU</h2>
+            <input type="text" id="r-u" placeholder="Pilih Username">
+            <input type="password" id="r-p" placeholder="Pilih Password">
+            <div class="cap-box">
+                <div class="chk-ui" id="r-c" onclick="runVerify('reg')"></div>
+                <div style="font-size: 14px;">I'm not a robot</div>
             </div>
-            <button id="r-b" onclick="handleR()" disabled>DAFTAR</button>
-            <p style="font-size: 12px;"><span onclick="nav('login')" style="color:var(--main); cursor:pointer;">Balik Login</span></p>
+            <button id="r-b" onclick="handleReg()" disabled>DAFTAR SEKARANG</button>
+            <p style="font-size: 13px;"><span onclick="navTo('login')" style="color:var(--p); cursor:pointer;">Kembali ke Login</span></p>
         </div>
 
         <div id="menu">
-            <div style="text-align: left; margin-bottom: 20px;">
-                <div id="disp-name" style="font-size: 22px; font-weight: bold; color: var(--main);"></div>
-                <div id="disp-streak" style="font-size: 12px; color: #f1c40f;">🔥 0 WIN STREAK</div>
+            <div style="text-align: left; margin-bottom: 25px;">
+                <div id="my-username" style="font-size: 26px; font-weight: bold; color: var(--p);"></div>
+                <div style="font-size: 12px; color: #f1c40f;">💎 PREMIUM MEMBER</div>
             </div>
             <div class="lobby">
-                <div style="font-size: 11px; font-weight: bold; color: #555; margin-bottom: 10px;">LOBBY AKTIF</div>
-                <div id="plist"></div>
+                <div style="font-size: 10px; font-weight: bold; color: #444; margin-bottom: 12px; text-align: left; letter-spacing: 1px;">PEMAIN YANG SEDANG ONLINE</div>
+                <div id="player-list"></div>
             </div>
-            <button onclick="logout()" style="background: transparent; color: #555; border: 1px solid #333; font-size: 11px; margin-top: 30px;">LOGOUT</button>
+            <button onclick="doLogout()" style="background: transparent; color: #555; border: 1px solid #333; margin-top: 30px; font-size: 11px;">KELUAR AKUN</button>
         </div>
 
         <div id="game">
-            <div id="status" style="font-size: 12px; padding: 10px; background: #222; border-radius: 10px;">Menunggu lawan...</div>
+            <div id="game-info" style="font-size: 12px; background: #222; padding: 12px; border-radius: 12px; margin-bottom: 15px; color: #aaa;"></div>
             <div id="board"></div>
-            <button onclick="resign()" style="background: #c0392b;">MENYERAH</button>
+            <button onclick="askResign()" style="background: #e74c3c;">MENYERAH</button>
         </div>
     </div>
 
-    <div id="overlay">
-        <h1 id="res-h" style="font-size: 50px; color: var(--main);"></h1>
-        <p id="res-p" style="color: #888;"></p>
-        <button onclick="location.reload()" style="width: 220px; margin-top: 40px;">KEMBALI KE LOBBY</button>
+    <div class="modal" id="result-screen">
+        <h1 id="res-msg" style="font-size: 60px; margin: 0;"></h1>
+        <p id="res-sub" style="color: #777; margin-bottom: 40px;"></p>
+        <button onclick="location.reload()" style="width: 240px;">KEMBALI KE LOBBY</button>
     </div>
 
     <script>
-        let board, game = new Chess(), peer = new Peer(), conn = null, side = '', myPeerId = '';
-        let myName = "", oppName = "", vDone = { login: false, reg: false };
-        let db = JSON.parse(localStorage.getItem('chess_vFinal') || '{}');
+        let board, game = new Chess(), peer = new Peer(), conn = null, side = '', peerID = '';
+        let me = "", op = "", isVerified = { login: false, reg: false };
+        let db = JSON.parse(localStorage.getItem('chess_vFinal_PRO') || '{}');
 
-        function verify(m) {
-            if(vDone[m]) return;
-            $(`#${m[0]}-c`).addClass('load');
+        function runVerify(mode) {
+            if(isVerified[mode]) return;
+            $(`#${mode[0]}-c`).addClass('loading');
             setTimeout(() => {
-                $(`#${m[0]}-c`).removeClass('load').addClass('done');
-                vDone[m] = true; $(`#${m[0]}-b`).prop('disabled', false);
-            }, 1200);
+                $(`#${mode[0]}-c`).removeClass('loading').addClass('checked');
+                isVerified[mode] = true;
+                $(`#${mode[0]}-b`).prop('disabled', false);
+            }, 1500);
         }
 
-        function nav(m) {
-            $('.circle').removeClass('done load'); vDone = {login:false, reg:false};
+        function navTo(mode) {
+            $('.chk-ui').removeClass('checked loading'); isVerified = {login:false, reg:false};
             $('button').prop('disabled', true);
-            $('#login, #reg').hide(); $(`#${m}`).fadeIn();
+            $('#login, #reg').hide(); $(`#${mode}`).fadeIn();
         }
 
-        function handleR() {
+        function handleReg() {
             let u = $('#r-u').val().trim(), p = $('#r-p').val().trim();
-            if(!u || db[u]) return alert("Username tidak tersedia!");
-            db[u] = { p, s: 0 }; save(); proceed(u);
+            if(!u || db[u]) return alert("Username sudah terpakai!");
+            db[u] = { p, s: 0 }; saveDB(); startSession(u);
         }
 
-        function handleL() {
+        function handleLogin() {
             let u = $('#l-u').val().trim(), p = $('#l-p').val().trim();
-            if(db[u] && db[u].p === p) proceed(u);
-            else alert("Login Salah!");
+            if(db[u] && db[u].p === p) startSession(u);
+            else alert("Username atau Password salah!");
         }
 
-        function proceed(u) {
-            myName = u; sessionStorage.setItem('u', u);
+        function startSession(u) {
+            me = u; sessionStorage.setItem('active_user', u);
             $('#login, #reg').hide(); $('#menu').fadeIn();
-            $('#disp-name').text(u); $('#disp-streak').text("🔥 " + db[u].s + " WIN STREAK");
-            startLobby();
+            $('#my-username').text(u);
+            runLobbySync();
         }
 
-        peer.on('open', (id) => { myPeerId = id; });
+        peer.on('open', (id) => peerID = id);
         peer.on('connection', (c) => {
             conn = c;
-            conn.on('data', (d) => {
-                if(d.t === 'INV') {
-                    if(confirm(d.f + " mengajak tanding. Terima?")) {
-                        side = 'white'; conn.send({t:'ACC', f:myName}); launch('white');
+            conn.on('data', (data) => {
+                if(data.type === 'INVITE') {
+                    if(confirm(data.from + " menantang kamu tanding! Terima?")) {
+                        side = 'white'; conn.send({type:'ACCEPT', from:me}); launchGame('white');
                     }
-                } else if(d.t === 'ACC') { side = 'black'; launch('black'); }
-                else if(d.t === 'MOV') { game.move(d.m); board.position(game.fen()); checkWin(); }
-                else if(d.t === 'RES') { end("MENANG", true); }
+                } else if(data.type === 'ACCEPT') { side = 'black'; launchGame('black'); }
+                else if(data.type === 'MOVE') { game.move(data.move); board.position(game.fen()); checkGameOver(); }
+                else if(data.type === 'RESIGN') { showEnd("MENANG", "Lawan menyerah!"); }
             });
         });
 
-        function startLobby() {
+        function runLobbySync() {
             setInterval(() => {
-                if(!myName || !$('#menu').is(':visible')) return;
-                localStorage.setItem('chess_on_'+myPeerId, JSON.stringify({n:myName, s:db[myName].s, t:Date.now()}));
-                $('#plist').empty();
+                if(!me || !$('#menu').is(':visible')) return;
+                localStorage.setItem('online_chess_'+peerID, JSON.stringify({name:me, time:Date.now()}));
+                $('#player-list').empty();
                 for(let i=0; i<localStorage.length; i++){
-                    let k = localStorage.key(i);
-                    if(k.startsWith('chess_on_') && k !== 'chess_on_'+myPeerId){
-                        let p = JSON.parse(localStorage.getItem(k));
-                        if(Date.now() - p.t < 4000) {
-                            $('#plist').append(`<div class="player">
-                                <span><b>${p.n}</b> (🔥${p.s})</span>
-                                <button onclick="sendInv('${k.split('_')[2]}','${p.n}')" style="width:60px; padding:6px; margin:0; font-size:10px;">MAIN</button>
+                    let key = localStorage.key(i);
+                    if(key.startsWith('online_chess_') && key !== 'online_chess_'+peerID){
+                        let pData = JSON.parse(localStorage.getItem(key));
+                        if(Date.now() - pData.time < 5000) {
+                            $('#player-list').append(`<div class="p-card">
+                                <span><b>${pData.name}</b></span>
+                                <button onclick="sendInvite('${key.split('_')[2]}','${pData.name}')" style="width:80px; padding:8px; margin:0; font-size:11px;">TANTANG</button>
                             </div>`);
-                        }
+                        } else { localStorage.removeItem(key); } // Clean up inactive
                     }
                 }
             }, 3000);
         }
 
-        function sendInv(tid, tn) {
-            oppName = tn; conn = peer.connect(tid);
-            conn.on('open', () => conn.send({t:'INV', f:myName}));
+        function sendInvite(targetID, targetName) {
+            op = targetName; conn = peer.connect(targetID);
+            conn.on('open', () => conn.send({type:'INVITE', from:me}));
         }
 
-        function launch(s) {
+        function launchGame(s) {
             $('#menu').hide(); $('#game').fadeIn();
-            $('#status').text("Sisi Kamu: " + (s==='white'?'PUTIH':'HITAM'));
+            $('#game-info').text("Kamu bermain sebagai: " + (s==='white'?'PUTIH':'HITAM'));
             setTimeout(() => {
                 board = Chessboard('board', {
                     draggable: true, orientation: s, position: 'start',
-                    onDragStart: (a, b) => { if(game.game_over() || game.turn() !== s[0]) return false; },
-                    onDrop: (a, b) => {
-                        let m = game.move({from:a, to:b, promotion:'q'});
-                        if(!m) return 'snapback';
-                        conn.send({t:'MOV', m:m}); checkWin();
+                    onDragStart: (source, piece) => { if(game.game_over() || game.turn() !== s[0]) return false; },
+                    onDrop: (source, target) => {
+                        let move = game.move({from:source, to:target, promotion:'q'});
+                        if(!move) return 'snapback';
+                        conn.send({type:'MOVE', move:move}); checkGameOver();
                     },
                     pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
                 });
             }, 500);
         }
 
-        function checkWin() {
+        function checkGameOver() {
             if(game.game_over()) {
                 let win = game.in_checkmate() && game.turn() !== side[0];
-                end(win ? "MENANG" : "KALAH", win);
+                showEnd(win ? "MENANG" : "KALAH", win ? "Skakmat yang hebat!" : "Kamu terjebak skakmat.");
             }
         }
 
-        function end(t, win) {
-            if(win) db[myName].s++; else db[myName].s = 0;
-            save(); $('#res-h').text(t); $('#res-p').text(win ? "Selamat, kamu hebat!" : "Jangan menyerah, coba lagi!");
-            $('#overlay').css('display','flex');
+        function showEnd(title, sub) {
+            $('#res-msg').text(title).css('color', title === 'MENANG' ? 'var(--p)' : '#e74c3c');
+            $('#res-sub').text(sub);
+            $('#result-screen').css('display', 'flex');
         }
 
-        function save() { localStorage.setItem('chess_vFinal', JSON.stringify(db)); }
-        function logout() { sessionStorage.clear(); location.reload(); }
-        function resign() { if(confirm("Nyerah sekarang?")) { conn.send({t:'RES'}); end("KALAH", false); } }
+        function saveDB() { localStorage.setItem('chess_vFinal_PRO', JSON.stringify(db)); }
+        function doLogout() { localStorage.removeItem('online_chess_'+peerID); sessionStorage.clear(); location.reload(); }
+        function askResign() { if(confirm("Yakin ingin menyerah?")) { conn.send({type:'RESIGN'}); showEnd("KALAH", "Kamu menyerah dari pertandingan."); } }
 
         $(document).ready(() => {
-            let s = sessionStorage.getItem('u');
-            if(s && db[s]) proceed(s);
+            let savedUser = sessionStorage.getItem('active_user');
+            if(savedUser && db[savedUser]) startSession(savedUser);
         });
     </script>
 </body>
